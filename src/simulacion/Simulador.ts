@@ -159,14 +159,26 @@ export class Simulador {
     }
   }
 
-  consultarProceso(pid: string) {
+    consultarProceso(pid: string) {
     const proceso = this.procesos.get(pid);
 
     if (proceso === undefined) {
       throw new Error("No existe un proceso con ese PID");
     }
 
-    return proceso.consultar();
+    const vistaCPU = this.planificador.consultar();
+    let quantumConsumido = 0;
+
+    // Solo el proceso que ocupa la CPU tiene un turno en curso.
+    if (vistaCPU.procesoEnCPU === pid) {
+      quantumConsumido = vistaCPU.quantumConsumido;
+    }
+
+    // Sumamos el quantum a la copia protegida de los datos.
+    return Object.freeze({
+      ...proceso.consultar(),
+      quantumConsumido
+    });
   }
 
   obtenerMetricas() {
@@ -191,7 +203,7 @@ export class Simulador {
       planificador: this.planificador.consultar(),
       memoria: this.memoria.consultar(),
       procesos: Object.freeze(
-        [...this.procesos.values()].map((proceso) => proceso.consultar())
+        [...this.procesos.keys()].map((pid) => this.consultarProceso(pid))
       )
     });
   }

@@ -242,6 +242,10 @@ describe("Simulador", () => {
     expect(Reflect.set(vista, "reloj", 99)).toBe(false);
     expect(Reflect.set(vista.procesos, "0", null)).toBe(false);
     expect(Reflect.set(vista.procesos[0], "cpuRestante", 99)).toBe(false);
+    // La consulta anterior conserva los datos del momento en que se tomó.
+    expect(vista.reloj).toBe(0);
+    expect(vista.procesos[0].estado).toBe("NUEVO");
+    expect(vista.procesos[0].cpuRestante).toBe(3);
 
     simulador.avanzarTick();
 
@@ -255,5 +259,37 @@ describe("Simulador", () => {
     expect(vista.reloj).toBe(0);
     expect(vista.procesos[0].estado).toBe("NUEVO");
     expect(vista.procesos[0].cpuRestante).toBe(3);
+  });
+    test("consulta el quantum de cada proceso y lo reinicia al rotar", () => {
+    const simulador = new Simulador(300, 2);
+    simulador.registrarProceso("P1", 100, 3);
+    simulador.registrarProceso("P2", 100, 3);
+
+    expect(simulador.consultarProceso("P1").quantumConsumido).toBe(0);
+
+    simulador.avanzarTick();
+
+    // P1 consume su turno mientras P2 espera.
+    expect(simulador.consultarProceso("P1").quantumConsumido).toBe(1);
+    expect(simulador.consultarProceso("P2").quantumConsumido).toBe(0);
+    expect(simulador.consultar().procesos[0]).toEqual(
+      simulador.consultarProceso("P1")
+    );
+
+    simulador.avanzarTick();
+
+    // Al agotar el quantum, P1 vuelve a listos sin un turno en curso.
+    expect(simulador.consultarProceso("P1")).toMatchObject({
+      estado: "LISTO",
+      quantumConsumido: 0
+    });
+
+    simulador.avanzarTick();
+
+    expect(simulador.consultarProceso("P2")).toMatchObject({
+      estado: "EJECUTANDO",
+      quantumConsumido: 1
+    });
+    expect(simulador.consultarProceso("P1").quantumConsumido).toBe(0);
   });
 });
