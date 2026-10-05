@@ -66,6 +66,56 @@ export class AdministradorMemoria {
     return true;
   }
 
+
+  liberar(pid: string): boolean {
+    const indice = this.bloques.findIndex(
+      (bloque) => bloque.consultar().pid === pid
+    );
+
+    // Si el proceso no tiene memoria asignada, no modificamos nada.
+    if (indice === -1) {
+      return false;
+    }
+
+    const datos = this.bloques[indice].consultar();
+
+    // Reemplazamos el bloque ocupado por uno libre del mismo tamaño.
+    this.bloques[indice] = new BloqueMemoria(
+      datos.inicio,
+      datos.tamano
+    );
+
+    this.unirBloquesLibres();
+    return true;
+  }
+
+  private unirBloquesLibres(): void {
+    let indice = 0;
+
+    // Comparamos cada bloque con el siguiente.
+    while (indice < this.bloques.length - 1) {
+      const actual = this.bloques[indice];
+      const siguiente = this.bloques[indice + 1];
+
+      if (actual.estaLibre() && siguiente.estaLibre()) {
+        const datosActual = actual.consultar();
+        const datosSiguiente = siguiente.consultar();
+
+        const unido = new BloqueMemoria(
+          datosActual.inicio,
+          datosActual.tamano + datosSiguiente.tamano
+        );
+
+        // Reemplazamos los dos bloques vecinos por uno solo.
+        this.bloques.splice(indice, 2, unido);
+
+        // Conservamos el índice para comprobar si puede unirse con otro.
+      } else {
+        indice++;
+      }
+    }
+  }
+
   consultar() {
     // Protegemos tanto la colección como los datos de cada bloque.
     return Object.freeze({

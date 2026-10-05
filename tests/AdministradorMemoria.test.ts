@@ -105,4 +105,80 @@ describe("AdministradorMemoria", () => {
     ]);
     expect(memoria.consultar().bloques).toHaveLength(2);
   });
+  test("libera memoria, une vecinos y permite reutilizar el espacio", () => {
+    const memoria = new AdministradorMemoria(400, new PrimerAjuste());
+    memoria.asignar("P1", 100);
+    memoria.asignar("P2", 100);
+    memoria.asignar("P3", 100);
+    memoria.asignar("P4", 100);
+
+    // Primero queda un hueco entre procesos ocupados.
+    expect(memoria.liberar("P2")).toBe(true);
+
+    expect(memoria.consultar().bloques).toEqual([
+      { inicio: 0, tamano: 100, pid: "P1", libre: false },
+      { inicio: 100, tamano: 100, pid: null, libre: true },
+      { inicio: 200, tamano: 100, pid: "P3", libre: false },
+      { inicio: 300, tamano: 100, pid: "P4", libre: false }
+    ]);
+
+    // Al liberar P1, se une con el hueco de su derecha.
+    memoria.liberar("P1");
+
+    expect(memoria.consultar().bloques).toEqual([
+      { inicio: 0, tamano: 200, pid: null, libre: true },
+      { inicio: 200, tamano: 100, pid: "P3", libre: false },
+      { inicio: 300, tamano: 100, pid: "P4", libre: false }
+    ]);
+
+    // Al liberar P3, se une con el hueco de su izquierda.
+    memoria.liberar("P3");
+
+    expect(memoria.consultar().bloques).toEqual([
+      { inicio: 0, tamano: 300, pid: null, libre: true },
+      { inicio: 300, tamano: 100, pid: "P4", libre: false }
+    ]);
+
+    // El espacio unido admite un proceso mayor que los bloques originales.
+    expect(memoria.asignar("P5", 250)).toBe(true);
+
+    expect(memoria.consultar().bloques).toEqual([
+      { inicio: 0, tamano: 250, pid: "P5", libre: false },
+      { inicio: 250, tamano: 50, pid: null, libre: true },
+      { inicio: 300, tamano: 100, pid: "P4", libre: false }
+    ]);
+  });
+
+  test("fusiona ambos vecinos y recupera toda la memoria", () => {
+    const memoria = new AdministradorMemoria(300, new PrimerAjuste());
+    memoria.asignar("P1", 100);
+    memoria.asignar("P2", 100);
+    memoria.asignar("P3", 100);
+
+    memoria.liberar("P1");
+    memoria.liberar("P3");
+
+    // P2 queda entre dos huecos libres.
+    expect(memoria.liberar("P2")).toBe(true);
+
+    expect(memoria.consultar().bloques).toEqual([
+      { inicio: 0, tamano: 300, pid: null, libre: true }
+    ]);
+  });
+
+  test("liberar un PID inexistente o ya liberado no cambia la memoria", () => {
+    const memoria = new AdministradorMemoria(100, new PrimerAjuste());
+    memoria.asignar("P1", 100);
+    const antes = memoria.consultar();
+
+    expect(memoria.liberar("P9")).toBe(false);
+    expect(memoria.consultar()).toEqual(antes);
+
+    expect(memoria.liberar("P1")).toBe(true);
+    expect(memoria.liberar("P1")).toBe(false);
+
+    expect(memoria.consultar().bloques).toEqual([
+      { inicio: 0, tamano: 100, pid: null, libre: true }
+    ]);
+  });
 });
