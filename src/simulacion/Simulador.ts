@@ -4,7 +4,7 @@ import { PrimerAjuste } from "../memoria/PrimerAjuste.js";
 import type { SeleccionarBloque } from "../memoria/SeleccionarBloque.js";
 import { PlanificadorRoundRobin } from "../planificacion/PlanificadorRoundRobin.js";
 import type { PlanificarCPU } from "../planificacion/PlanificarCPU.js";
-
+import type { GestionarMemoria } from "../memoria/GestionarMemoria.js";
 // Indica cuando el proceso pide una E/S y cuanto tiempo debe esperar.
 export type EventoES = Readonly<{
   despuesDeCPU: number;
@@ -12,7 +12,7 @@ export type EventoES = Readonly<{
 }>;
 
 export class Simulador {
-  private readonly memoria: AdministradorMemoria;
+  private readonly memoria: GestionarMemoria;
   private readonly planificador: PlanificarCPU;
   private readonly procesos: Map<string, Proceso> = new Map();
   // Guarda el evento de entrada/salida pendiente de cada proceso.

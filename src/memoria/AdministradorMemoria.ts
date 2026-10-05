@@ -1,7 +1,8 @@
 import { BloqueMemoria } from "../modelo/BloqueMemoria.js";
 import type { SeleccionarBloque } from "./SeleccionarBloque.js";
+import type { GestionarMemoria } from "./GestionarMemoria.js";
 
-export class AdministradorMemoria {
+export class AdministradorMemoria implements GestionarMemoria {
   private readonly tamanoTotal: number;
   private readonly politica: SeleccionarBloque;
   private bloques: BloqueMemoria[];
