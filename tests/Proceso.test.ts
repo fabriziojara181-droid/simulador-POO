@@ -31,4 +31,32 @@ describe("Proceso", () => {
     expect(() => new Proceso("   ", 200, 4))
       .toThrow("El PID no puede estar vacío");
   });
+    test("rechaza memoria igual a cero", () => {
+    expect(() => new Proceso("P1", 0, 4))
+      .toThrow("La memoria requerida debe ser un entero positivo");
+  });
+
+  test("rechaza memoria negativa", () => {
+    expect(() => new Proceso("P1", -100, 4))
+      .toThrow("La memoria requerida debe ser un entero positivo");
+  });
+
+  test("rechaza memoria con decimales", () => {
+    expect(() => new Proceso("P1", 10.5, 4))
+      .toThrow("La memoria requerida debe ser un entero positivo");
+  });
+    test("rechaza tiempo de CPU igual a cero", () => {
+    expect(() => new Proceso("P1", 200, 0))
+      .toThrow("El tiempo de CPU debe ser un entero positivo");
+  });
+
+  test("rechaza tiempo de CPU negativo", () => {
+    expect(() => new Proceso("P1", 200, -4))
+      .toThrow("El tiempo de CPU debe ser un entero positivo");
+  });
+
+  test("rechaza tiempo de CPU con decimales", () => {
+    expect(() => new Proceso("P1", 200, 2.5))
+      .toThrow("El tiempo de CPU debe ser un entero positivo");
+  });
   });
