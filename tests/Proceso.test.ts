@@ -61,4 +61,22 @@ describe("Proceso", () => {
     expect(() => new Proceso("P1", 200, 2.5))
       .toThrow("El tiempo de CPU debe ser un entero positivo");
   });
+    test("un proceso nuevo puede pasar a esperar memoria", () => {
+    const proceso = new Proceso("P1", 200, 4);
+
+    proceso.esperarMemoria();
+
+    expect(proceso.consultar().estado).toBe("ESPERANDO_MEMORIA");
+    expect(proceso.consultar().cpuRestante).toBe(4);
+  });
+
+  test("rechaza ingresar dos veces a la espera de memoria", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+
+    expect(() => proceso.esperarMemoria())
+      .toThrow("Solo un proceso nuevo puede esperar memoria");
+
+    expect(proceso.consultar().estado).toBe("ESPERANDO_MEMORIA");
+  });
   });

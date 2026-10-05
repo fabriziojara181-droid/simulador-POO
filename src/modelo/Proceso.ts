@@ -44,6 +44,16 @@ export class Proceso {
     this.cpuRestante = cpuTotal;
   }
 
+    esperarMemoria(): void {
+    // Solo un proceso nuevo puede ingresar a la espera de memoria.
+    if (this.estado !== "NUEVO") {
+      throw new Error("Solo un proceso nuevo puede esperar memoria");
+    }
+
+    this.estado = "ESPERANDO_MEMORIA";
+  }
+
+
   consultar() {
     // Entrega una copia protegida de los datos del proceso.
     return Object.freeze({
