@@ -116,6 +116,41 @@ export class AdministradorMemoria {
     }
   }
 
+
+  obtenerMetricas() {
+    let memoriaLibre = 0;
+    let mayorBloqueLibre = 0;
+
+    // Sumamos los espacios libres y buscamos el mayor hueco contiguo.
+    for (const bloque of this.bloques) {
+      if (bloque.estaLibre()) {
+        const tamano = bloque.consultar().tamano;
+        memoriaLibre += tamano;
+        mayorBloqueLibre = Math.max(mayorBloqueLibre, tamano);
+      }
+    }
+
+    const memoriaOcupada = this.tamanoTotal - memoriaLibre;
+    const porcentajeOcupacion =
+      (memoriaOcupada / this.tamanoTotal) * 100;
+
+    // Sin memoria libre, evitamos dividir por cero.
+    let fragmentacionExterna = 0;
+
+    if (memoriaLibre > 0) {
+      fragmentacionExterna =
+        (1 - mayorBloqueLibre / memoriaLibre) * 100;
+    }
+
+    return Object.freeze({
+      memoriaOcupada,
+      memoriaLibre,
+      mayorBloqueLibre,
+      porcentajeOcupacion,
+      fragmentacionExterna
+    });
+  }
+
   consultar() {
     // Protegemos tanto la colección como los datos de cada bloque.
     return Object.freeze({

@@ -181,4 +181,60 @@ describe("AdministradorMemoria", () => {
       { inicio: 0, tamano: 100, pid: null, libre: true }
     ]);
   });
+    test("calcula las métricas con memoria vacía y completamente ocupada", () => {
+    const memoria = new AdministradorMemoria(500, new PrimerAjuste());
+
+    expect(memoria.obtenerMetricas()).toEqual({
+      memoriaOcupada: 0,
+      memoriaLibre: 500,
+      mayorBloqueLibre: 500,
+      porcentajeOcupacion: 0,
+      fragmentacionExterna: 0
+    });
+
+    memoria.asignar("P1", 500);
+
+    expect(memoria.obtenerMetricas()).toEqual({
+      memoriaOcupada: 500,
+      memoriaLibre: 0,
+      mayorBloqueLibre: 0,
+      porcentajeOcupacion: 100,
+      fragmentacionExterna: 0
+    });
+  });
+
+  test("mide la fragmentación y la elimina al unir los huecos", () => {
+    const memoria = new AdministradorMemoria(500, new PrimerAjuste());
+    memoria.asignar("P1", 100);
+    memoria.asignar("P2", 100);
+    memoria.asignar("P3", 300);
+
+    // P2 queda ocupando el espacio entre dos huecos libres.
+    memoria.liberar("P1");
+    memoria.liberar("P3");
+
+    expect(memoria.obtenerMetricas()).toEqual({
+      memoriaOcupada: 100,
+      memoriaLibre: 400,
+      mayorBloqueLibre: 300,
+      porcentajeOcupacion: 20,
+      fragmentacionExterna: 25
+    });
+
+    // La suma libre alcanza, pero ningún hueco individual admite 350.
+    const antes = memoria.consultar();
+
+    expect(memoria.asignar("P4", 350)).toBe(false);
+    expect(memoria.consultar()).toEqual(antes);
+
+    memoria.liberar("P2");
+
+    expect(memoria.obtenerMetricas()).toEqual({
+      memoriaOcupada: 0,
+      memoriaLibre: 500,
+      mayorBloqueLibre: 500,
+      porcentajeOcupacion: 0,
+      fragmentacionExterna: 0
+    });
+  });
 });
