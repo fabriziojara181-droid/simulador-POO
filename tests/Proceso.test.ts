@@ -10,7 +10,9 @@ describe("Proceso", () => {
     expect(datos).toEqual({
       pid: "P1",
       memoriaRequerida: 200,
-      cpuTotal: 4
+      cpuTotal: 4,
+      cpuRestante: 4,
+      estado: "NUEVO"
     });
 });
   test("protege los datos devueltos por la consulta", () => {
