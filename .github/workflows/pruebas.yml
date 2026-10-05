@@ -1,0 +1,33 @@
+name: Verificar proyecto
+
+# Ejecuta las comprobaciones al subir cambios o abrir un pull request.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v6
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Instalar las dependencias
+        run: npm ci
+
+      - name: Revisar los tipos
+        run: npm run typecheck
+
+      - name: Ejecutar pruebas y medir cobertura
+        run: npm run coverage
