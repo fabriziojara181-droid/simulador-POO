@@ -8,6 +8,11 @@ export class Proceso {
     memoriaRequerida: number,
     cpuTotal: number
   ) {
+    // Rechaza identificadores vacíos o formados solo por espacios.
+    if (pid.trim().length === 0) {
+      throw new Error("El PID no puede estar vacío");
+    }
+
     this.pid = pid;
     this.memoriaRequerida = memoriaRequerida;
     this.cpuTotal = cpuTotal;

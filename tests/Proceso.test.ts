@@ -23,4 +23,12 @@ describe("Proceso", () => {
     expect(datos.memoriaRequerida).toBe(200);
     expect(proceso.consultar().memoriaRequerida).toBe(200);
   });
+    test("rechaza un PID vacío", () => {
+    expect(() => new Proceso("", 200, 4))
+      .toThrow("El PID no puede estar vacío");
+  });
+    test("rechaza un PID formado solo por espacios", () => {
+    expect(() => new Proceso("   ", 200, 4))
+      .toThrow("El PID no puede estar vacío");
+  });
   });
