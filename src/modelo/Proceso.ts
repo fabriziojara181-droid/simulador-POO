@@ -12,7 +12,7 @@ export class Proceso {
   private readonly memoriaRequerida: number;
   private readonly cpuTotal: number;
 
-  // Estos datos cambiarán a medida que avance la simulación.
+  // Estos datos cambian a medida que avanza la simulación.
   private estado: EstadoProceso = "NUEVO";
   private cpuRestante: number;
 
@@ -40,11 +40,11 @@ export class Proceso {
     this.memoriaRequerida = memoriaRequerida;
     this.cpuTotal = cpuTotal;
 
-    // Al crearse, todavía tiene pendiente todo su tiempo de CPU.
+    // Al crearse, tiene pendiente todo su tiempo de CPU.
     this.cpuRestante = cpuTotal;
   }
 
-    esperarMemoria(): void {
+  esperarMemoria(): void {
     // Solo un proceso nuevo puede ingresar a la espera de memoria.
     if (this.estado !== "NUEVO") {
       throw new Error("Solo un proceso nuevo puede esperar memoria");
@@ -53,9 +53,40 @@ export class Proceso {
     this.estado = "ESPERANDO_MEMORIA";
   }
 
+  admitir(): void {
+    // El administrador llamará a esta operación tras asignar memoria.
+    if (this.estado !== "ESPERANDO_MEMORIA") {
+      throw new Error("Solo un proceso esperando memoria puede ser admitido");
+    }
+
+    this.estado = "LISTO";
+  }
+
+  despachar(): void {
+    // Solo los procesos listos pueden recibir un turno de CPU.
+    if (this.estado !== "LISTO") {
+      throw new Error("Solo un proceso listo puede ser despachado");
+    }
+
+    this.estado = "EJECUTANDO";
+  }
+
+  ejecutarTick(): void {
+    // Cada llamada consume una unidad de CPU del proceso en ejecución.
+    if (this.estado !== "EJECUTANDO") {
+      throw new Error("Solo un proceso ejecutando puede consumir CPU");
+    }
+
+    this.cpuRestante--;
+
+    // El simulador liberará la memoria al detectar que terminó.
+    if (this.cpuRestante === 0) {
+      this.estado = "TERMINADO";
+    }
+  }
 
   consultar() {
-    // Entrega una copia protegida de los datos del proceso.
+    // Entrega una copia protegida sin exponer objetos internos modificables.
     return Object.freeze({
       pid: this.pid,
       memoriaRequerida: this.memoriaRequerida,

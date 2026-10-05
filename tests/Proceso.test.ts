@@ -79,4 +79,77 @@ describe("Proceso", () => {
 
     expect(proceso.consultar().estado).toBe("ESPERANDO_MEMORIA");
   });
+    test("admite un proceso que espera memoria", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+
+    proceso.admitir();
+
+    expect(proceso.consultar().estado).toBe("LISTO");
+    expect(proceso.consultar().cpuRestante).toBe(4);
+  });
+
+  test("rechaza admitir un proceso nuevo", () => {
+    const proceso = new Proceso("P1", 200, 4);
+
+    expect(() => proceso.admitir())
+      .toThrow("Solo un proceso esperando memoria puede ser admitido");
+
+    expect(proceso.consultar().estado).toBe("NUEVO");
+  });
+
+  test("despacha un proceso listo y consume un tick de CPU", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+    proceso.admitir();
+
+    proceso.despachar();
+
+    expect(proceso.consultar().estado).toBe("EJECUTANDO");
+    expect(proceso.consultar().cpuRestante).toBe(4);
+
+    proceso.ejecutarTick();
+
+    expect(proceso.consultar().cpuRestante).toBe(3);
+    expect(proceso.consultar().estado).toBe("EJECUTANDO");
+  });
+
+  test("rechaza despachar un proceso que espera memoria", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+
+    expect(() => proceso.despachar())
+      .toThrow("Solo un proceso listo puede ser despachado");
+
+    expect(proceso.consultar().estado).toBe("ESPERANDO_MEMORIA");
+  });
+
+  test("rechaza consumir CPU antes del despacho", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+    proceso.admitir();
+
+    expect(() => proceso.ejecutarTick())
+      .toThrow("Solo un proceso ejecutando puede consumir CPU");
+
+    expect(proceso.consultar().estado).toBe("LISTO");
+    expect(proceso.consultar().cpuRestante).toBe(4);
+  });
+
+  test("termina al agotar su CPU y rechaza seguir ejecutando", () => {
+    const proceso = new Proceso("P1", 200, 1);
+    proceso.esperarMemoria();
+    proceso.admitir();
+    proceso.despachar();
+
+    proceso.ejecutarTick();
+
+    expect(proceso.consultar().estado).toBe("TERMINADO");
+    expect(proceso.consultar().cpuRestante).toBe(0);
+
+    expect(() => proceso.ejecutarTick())
+      .toThrow("Solo un proceso ejecutando puede consumir CPU");
+
+    expect(proceso.consultar().cpuRestante).toBe(0);
+  });
   });
