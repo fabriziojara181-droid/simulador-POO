@@ -206,4 +206,54 @@ describe("Simulador", () => {
 
     expect(simulador.consultar()).toEqual(antes);
   });
+    test("admite un proceso pequeño aunque otro anterior siga esperando memoria", () => {
+    const simulador = new Simulador(300, 2);
+
+    simulador.registrarProceso("P1", 200, 4);
+    simulador.registrarProceso("P2", 200, 2);
+    simulador.registrarProceso("P3", 100, 2);
+
+    simulador.avanzarTick();
+
+    // P1 ocupa 200. P2 no entra, pero P3 aprovecha los 100 restantes.
+    expect(simulador.consultarProceso("P1").estado).toBe("EJECUTANDO");
+    expect(simulador.consultarProceso("P2").estado).toBe("ESPERANDO_MEMORIA");
+    expect(simulador.consultarProceso("P3").estado).toBe("LISTO");
+
+    expect(simulador.consultar().planificador.listos).toEqual(["P3"]);
+    expect(simulador.consultar().memoria.bloques).toEqual([
+      { inicio: 0, tamano: 200, pid: "P1", libre: false },
+      { inicio: 200, tamano: 100, pid: "P3", libre: false }
+    ]);
+  });
+
+  test("protege las consultas y copia el evento recibido al registrar", () => {
+    const simulador = new Simulador(300, 2);
+    const evento = { despuesDeCPU: 1, duracion: 2 };
+
+    simulador.registrarProceso("P1", 100, 3, evento);
+    const vista = simulador.consultar();
+
+    // Cambiar el objeto original no debe modificar el evento registrado.
+    evento.despuesDeCPU = 3;
+    evento.duracion = 99;
+
+    // Tampoco se puede alterar el sistema a través de sus consultas.
+    expect(Reflect.set(vista, "reloj", 99)).toBe(false);
+    expect(Reflect.set(vista.procesos, "0", null)).toBe(false);
+    expect(Reflect.set(vista.procesos[0], "cpuRestante", 99)).toBe(false);
+
+    simulador.avanzarTick();
+
+    expect(simulador.consultarProceso("P1")).toMatchObject({
+      estado: "BLOQUEADO",
+      cpuRestante: 2,
+      bloqueoRestante: 2
+    });
+
+    // La consulta anterior conserva la información de aquel momento.
+    expect(vista.reloj).toBe(0);
+    expect(vista.procesos[0].estado).toBe("NUEVO");
+    expect(vista.procesos[0].cpuRestante).toBe(3);
+  });
 });
