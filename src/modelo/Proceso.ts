@@ -15,6 +15,8 @@ export class Proceso {
   // Estos datos cambian a medida que avanza la simulación.
   private estado: EstadoProceso = "NUEVO";
   private cpuRestante: number;
+    // Mientras está bloqueado, cuenta los ticks pendientes de espera.
+  private bloqueoRestante: number = 0;
 
   constructor(
     pid: string,
@@ -85,6 +87,43 @@ export class Proceso {
     }
   }
 
+  devolverAListos(): void {
+    // El planificador lo llamará cuando termine el turno de CPU.
+    if (this.estado !== "EJECUTANDO") {
+      throw new Error("Solo un proceso ejecutando puede volver a listos");
+    }
+
+    this.estado = "LISTO";
+  }
+
+  bloquear(duracion: number): void {
+    // Bloquear detiene el uso de CPU, pero no termina el proceso.
+    if (this.estado !== "EJECUTANDO") {
+      throw new Error("Solo un proceso ejecutando puede bloquearse");
+    }
+
+    if (!Number.isInteger(duracion) || duracion <= 0) {
+      throw new Error("La duración del bloqueo debe ser un entero positivo");
+    }
+
+    this.bloqueoRestante = duracion;
+    this.estado = "BLOQUEADO";
+  }
+
+  avanzarBloqueo(): void {
+    // El simulador lo llamará en ticks posteriores al bloqueo.
+    if (this.estado !== "BLOQUEADO") {
+      throw new Error("Solo un proceso bloqueado puede avanzar su espera");
+    }
+
+    this.bloqueoRestante--;
+
+    if (this.bloqueoRestante === 0) {
+      this.estado = "LISTO";
+    }
+  }
+
+
   consultar() {
     // Entrega una copia protegida sin exponer objetos internos modificables.
     return Object.freeze({
@@ -92,7 +131,8 @@ export class Proceso {
       memoriaRequerida: this.memoriaRequerida,
       cpuTotal: this.cpuTotal,
       cpuRestante: this.cpuRestante,
-      estado: this.estado
+      estado: this.estado,
+      bloqueoRestante: this.bloqueoRestante
     });
   }
 }

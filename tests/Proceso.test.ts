@@ -12,7 +12,8 @@ describe("Proceso", () => {
       memoriaRequerida: 200,
       cpuTotal: 4,
       cpuRestante: 4,
-      estado: "NUEVO"
+      estado: "NUEVO",
+      bloqueoRestante: 0
     });
 });
   test("protege los datos devueltos por la consulta", () => {
@@ -151,5 +152,112 @@ describe("Proceso", () => {
       .toThrow("Solo un proceso ejecutando puede consumir CPU");
 
     expect(proceso.consultar().cpuRestante).toBe(0);
+  });
+    test("puede volver a listos y recibir otro turno", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+    proceso.admitir();
+    proceso.despachar();
+    proceso.ejecutarTick();
+
+    proceso.devolverAListos();
+
+    expect(proceso.consultar().estado).toBe("LISTO");
+    expect(proceso.consultar().cpuRestante).toBe(3);
+
+    proceso.despachar();
+    proceso.ejecutarTick();
+
+    expect(proceso.consultar().estado).toBe("EJECUTANDO");
+    expect(proceso.consultar().cpuRestante).toBe(2);
+  });
+
+  test("rechaza devolver a listos un proceso nuevo", () => {
+    const proceso = new Proceso("P1", 200, 4);
+
+    expect(() => proceso.devolverAListos())
+      .toThrow("Solo un proceso ejecutando puede volver a listos");
+
+    expect(proceso.consultar().estado).toBe("NUEVO");
+  });
+
+  test("espera bloqueado sin consumir CPU y vuelve a listos", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+    proceso.admitir();
+    proceso.despachar();
+    proceso.ejecutarTick();
+
+    proceso.bloquear(2);
+
+    expect(proceso.consultar().estado).toBe("BLOQUEADO");
+    expect(proceso.consultar().bloqueoRestante).toBe(2);
+
+    proceso.avanzarBloqueo();
+
+    expect(proceso.consultar().estado).toBe("BLOQUEADO");
+    expect(proceso.consultar().bloqueoRestante).toBe(1);
+    expect(proceso.consultar().cpuRestante).toBe(3);
+
+    proceso.avanzarBloqueo();
+
+    expect(proceso.consultar().estado).toBe("LISTO");
+    expect(proceso.consultar().bloqueoRestante).toBe(0);
+    expect(proceso.consultar().cpuRestante).toBe(3);
+
+    // Después de la espera puede retomar su trabajo pendiente.
+    proceso.despachar();
+    proceso.ejecutarTick();
+
+    expect(proceso.consultar().cpuRestante).toBe(2);
+  });
+
+  test("rechaza bloquear un proceso que no está ejecutando", () => {
+    const proceso = new Proceso("P1", 200, 4);
+
+    expect(() => proceso.bloquear(2))
+      .toThrow("Solo un proceso ejecutando puede bloquearse");
+
+    expect(proceso.consultar().estado).toBe("NUEVO");
+    expect(proceso.consultar().bloqueoRestante).toBe(0);
+  });
+
+  test("rechaza duraciones de bloqueo inválidas sin cambiar el proceso", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+    proceso.admitir();
+    proceso.despachar();
+
+    // Cada intento debe fallar antes de modificar el estado.
+    for (const duracion of [0, -1, 1.5, NaN, Infinity]) {
+      expect(() => proceso.bloquear(duracion))
+        .toThrow("La duración del bloqueo debe ser un entero positivo");
+
+      expect(proceso.consultar().estado).toBe("EJECUTANDO");
+      expect(proceso.consultar().bloqueoRestante).toBe(0);
+    }
+  });
+
+  test("rechaza avanzar la espera de un proceso no bloqueado", () => {
+    const proceso = new Proceso("P1", 200, 4);
+
+    expect(() => proceso.avanzarBloqueo())
+      .toThrow("Solo un proceso bloqueado puede avanzar su espera");
+
+    expect(proceso.consultar().bloqueoRestante).toBe(0);
+  });
+
+  test("un proceso bloqueado no puede consumir CPU", () => {
+    const proceso = new Proceso("P1", 200, 4);
+    proceso.esperarMemoria();
+    proceso.admitir();
+    proceso.despachar();
+    proceso.bloquear(1);
+
+    expect(() => proceso.ejecutarTick())
+      .toThrow("Solo un proceso ejecutando puede consumir CPU");
+
+    expect(proceso.consultar().cpuRestante).toBe(4);
+    expect(proceso.consultar().estado).toBe("BLOQUEADO");
   });
   });
