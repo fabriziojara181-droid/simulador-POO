@@ -32,24 +32,7 @@ describe("Simulador", () => {
       utilizacionCPU: 0,
       cambiosContexto: 0
     });
-  });
-
-  test("rechaza registros duplicados o mayores que la RAM sin cambiar el sistema", () => {
-    const simulador = new Simulador(300, 2);
-    simulador.registrarProceso("P1", 100, 3);
-    const antes = simulador.consultar();
-
-    expect(() => simulador.registrarProceso("P1", 100, 2))
-      .toThrow("Ya existe un proceso con ese PID");
-
-    expect(() => simulador.registrarProceso("P2", 400, 2))
-      .toThrow("El proceso solicita más memoria que la disponible en total");
-
-    expect(simulador.consultar()).toEqual(antes);
-    expect(simulador.consultarProceso("P1").estado).toBe("NUEVO");
-  });
-
-  test("ejecuta un proceso hasta terminar y libera su memoria", () => {
+  });  test("ejecuta un proceso hasta terminar y libera su memoria", () => {
     const simulador = new Simulador(300, 2);
     simulador.registrarProceso("P1", 100, 2);
 

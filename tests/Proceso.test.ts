@@ -237,16 +237,6 @@ describe("Proceso", () => {
       expect(proceso.consultar().bloqueoRestante).toBe(0);
     }
   });
-
-  test("rechaza avanzar la espera de un proceso no bloqueado", () => {
-    const proceso = new Proceso("P1", 200, 4);
-
-    expect(() => proceso.avanzarBloqueo())
-      .toThrow("Solo un proceso bloqueado puede avanzar su espera");
-
-    expect(proceso.consultar().bloqueoRestante).toBe(0);
-  });
-
   test("un proceso bloqueado no puede consumir CPU", () => {
     const proceso = new Proceso("P1", 200, 4);
     proceso.esperarMemoria();

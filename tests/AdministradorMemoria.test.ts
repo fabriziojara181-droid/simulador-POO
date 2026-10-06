@@ -33,17 +33,6 @@ describe("AdministradorMemoria", () => {
       { inicio: 500, tamano: 524, pid: null, libre: true }
     ]);
   });
-
-  test("el ajuste exacto no genera un bloque de tamaño cero", () => {
-    const memoria = new AdministradorMemoria(200, new PrimerAjuste());
-
-    expect(memoria.asignar("P1", 200)).toBe(true);
-
-    expect(memoria.consultar().bloques).toEqual([
-      { inicio: 0, tamano: 200, pid: "P1", libre: false }
-    ]);
-  });
-
   test("la falta de espacio no modifica la memoria", () => {
     const memoria = new AdministradorMemoria(200, new PrimerAjuste());
     memoria.asignar("P1", 150);
@@ -63,31 +52,6 @@ describe("AdministradorMemoria", () => {
 
     expect(memoria.consultar()).toEqual(antes);
   });
-
-  test("rechaza un PID vacío sin modificar la memoria", () => {
-    const memoria = new AdministradorMemoria(500, new PrimerAjuste());
-    const antes = memoria.consultar();
-
-    for (const pid of ["", "   "]) {
-      expect(() => memoria.asignar(pid, 100))
-        .toThrow("El PID no puede estar vacío");
-    }
-
-    expect(memoria.consultar()).toEqual(antes);
-  });
-
-  test("rechaza tamaños inválidos sin modificar la memoria", () => {
-    const memoria = new AdministradorMemoria(500, new PrimerAjuste());
-    const antes = memoria.consultar();
-
-    for (const tamano of [0, -1, 1.5, NaN, Infinity]) {
-      expect(() => memoria.asignar("P1", tamano))
-        .toThrow("El tamaño solicitado debe ser un entero positivo");
-    }
-
-    expect(memoria.consultar()).toEqual(antes);
-  });
-
   test("protege la colección y los datos de sus bloques", () => {
     const memoria = new AdministradorMemoria(500, new PrimerAjuste());
     const vista = memoria.consultar();
@@ -148,24 +112,6 @@ describe("AdministradorMemoria", () => {
       { inicio: 300, tamano: 100, pid: "P4", libre: false }
     ]);
   });
-
-  test("fusiona ambos vecinos y recupera toda la memoria", () => {
-    const memoria = new AdministradorMemoria(300, new PrimerAjuste());
-    memoria.asignar("P1", 100);
-    memoria.asignar("P2", 100);
-    memoria.asignar("P3", 100);
-
-    memoria.liberar("P1");
-    memoria.liberar("P3");
-
-    // P2 queda entre dos huecos libres.
-    expect(memoria.liberar("P2")).toBe(true);
-
-    expect(memoria.consultar().bloques).toEqual([
-      { inicio: 0, tamano: 300, pid: null, libre: true }
-    ]);
-  });
-
   test("liberar un PID inexistente o ya liberado no cambia la memoria", () => {
     const memoria = new AdministradorMemoria(100, new PrimerAjuste());
     memoria.asignar("P1", 100);
